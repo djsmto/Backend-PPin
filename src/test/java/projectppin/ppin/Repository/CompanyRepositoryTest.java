@@ -15,6 +15,7 @@ import projectppin.ppin.domain.CompanyList;
 import projectppin.ppin.domain.CompanyRole;
 import projectppin.ppin.domain.DataLog;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,20 +43,21 @@ public class CompanyRepositoryTest {
     @Autowired
     private CompanyService companyService;
 
-    @Test
-    @DisplayName("회사 저장 테스트")
-    public void test1() {
-        CompanyList company = new CompanyList();
-        company.setCnb(1L);
-        company.setPosition("인사기획");
-        company.setDepartment("부장");
-        company.setBaseSalary(3000000L);
-
-        CompanyList savedCompany = companyRepository.save(company);
-
-        assertThat(savedCompany).isNotNull();
-        assertThat(savedCompany.getCnb()).isEqualTo(1L);  // Cnb 확인
-    }
+//    @Test
+//    @DisplayName("회사 저장 테스트")
+//    public void test1() {
+//        CompanyList company = new CompanyList();
+//        company.setCnb(100L);
+//        company.setPosition("CEO");
+//        company.setDepartment("CEO");
+//        company.setBaseSalary(10000000L);
+//        CompanyList companyList = new CompanyList();
+//        company.setCompanyRoleList(CompanyRole.CEO);
+//        CompanyList savedCompany = companyRepository.save(company);
+//
+//        assertThat(savedCompany).isNotNull();
+//        assertThat(savedCompany.getCnb()).isEqualTo(1L);  // Cnb 확인
+//    }
 
     @Test
     @DisplayName("회사 저장 테스트2")
@@ -235,5 +237,98 @@ public class CompanyRepositoryTest {
 
         // 변경 사항을 DB에 저장
         companyRepository.save(companyList);
+    }
+@Test
+@DisplayName("회사 저장 테스트 - 여러 역할")
+public void test11() {
+    CompanyList company = new CompanyList();
+    company.setCnb(100L);
+    company.setPosition("CEO");
+    company.setDepartment("CEO");
+    company.setBaseSalary(10000000L);
+
+    // CompanyRoleList를 List 타입으로 설정하고 여러 역할을 추가
+    List<CompanyRole> roleList = new ArrayList<>();
+    roleList.add(CompanyRole.CEO);  // CEO 역할 추가
+    company.setCompanyRoleList(roleList);  // 리스트로 설정
+
+    CompanyList savedCompany = companyRepository.save(company);
+
+    assertThat(savedCompany).isNotNull();
+    assertThat(savedCompany.getCnb()).isEqualTo(100L);  // Cnb 확인
+    assertThat(savedCompany.getCompanyRoleList()).contains(CompanyRole.CEO);  // 역할 리스트 확인
+}
+
+    @Transactional
+    @Commit
+    @Test
+    @DisplayName("회사 저장 및 권한 리스트 추가 테스트")
+    public void Test21() {
+        // 1. 새로운 회사 객체 생성 및 필드 설정
+        CompanyList company = new CompanyList();
+        company.setCnb(100L); // cnb 설정
+        company.setPosition("CEO");
+        company.setDepartment("CEO");
+        company.setBaseSalary(10000000L);
+
+        // 2. 회사 저장 (cnb가 생성됨)
+        CompanyList savedCompany = companyRepository.save(company);
+
+        // 저장 확인
+        assertThat(savedCompany).isNotNull();
+        assertThat(savedCompany.getCnb()).isEqualTo(100L); // Cnb 확인
+
+        // 3. 권한 리스트 추가
+        savedCompany.addRole(CompanyRole.CEO); // CEO 권한 추가
+
+        // 권한이 추가된 후 다시 저장
+        companyRepository.save(savedCompany);
+
+        // 4. 저장 후 권한 리스트 확인
+        CompanyList updatedCompany = companyRepository.findById(savedCompany.getCnb()).orElseThrow();
+        List<CompanyRole> roles = updatedCompany.getCompanyRoleList();
+
+        // 권한 리스트 확인
+        assertThat(roles).isNotNull();
+        assertThat(roles).contains(CompanyRole.CEO); // 권한 리스트에 추가된 권한들 확인
+    }
+
+    @Transactional
+    @Commit
+    @Test
+    @DisplayName("회사 저장 및 권한 리스트 추가 더미생성")
+    public void Test22() {
+        // 1. 새로운 회사 객체 생성 및 필드 설정
+        CompanyList company = new CompanyList();
+        company.setCnb(606L); // cnb 설정
+        company.setPosition("계약직");
+        company.setDepartment("기획");
+        company.setBaseSalary(3700000L);
+
+        // 2. 회사 저장 (cnb가 생성됨)
+        CompanyList savedCompany = companyRepository.save(company);
+
+        // 3. 권한 리스트 추가
+        savedCompany.addRole(CompanyRole.STAFF);
+//        savedCompany.addRole(CompanyRole.HR_MANAGEMENT);
+//        savedCompany.addRole(CompanyRole.HR_MANAGEMENT_MANAGER); // CEO 권한 추가
+        // 권한이 추가된 후 다시 저장
+        companyRepository.save(savedCompany);
+    }
+
+    @Transactional
+    @Commit
+    @Test
+    @DisplayName(" 권한 추가 테스트")
+    public void testAddRoleToCompany() {
+        // 1. cnb 회사 조회
+        CompanyList company = companyRepository.findById(303L).orElseThrow(() -> new IllegalArgumentException("Company not found"));
+
+        // 2. 새로운 권한 추가 (예: HR_PLAN_MANAGER)
+        company.addRole(CompanyRole.STAFF);
+
+        // 3. 권한 추가 후 저장
+        companyRepository.save(company);
+
     }
 }

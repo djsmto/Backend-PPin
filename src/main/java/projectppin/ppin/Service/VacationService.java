@@ -2,9 +2,11 @@ package projectppin.ppin.Service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import projectppin.ppin.DTO.DataLogDTO;
 
 @Service
+@Transactional
 public class VacationService {
     @Autowired
     private DataLogService dataLogService;
